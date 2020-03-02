@@ -13,6 +13,19 @@ module DatabaseCleaner
       fetch([orm, opts]) { add_cleaner(orm, opts) }
     end 
 
+    def strategy
+      strategies = transform_values(&:strategy)
+
+      case strategies.values.uniq.compact.count
+      when 0
+        nil
+      when 1
+        strategies.values.first
+      else
+        strategies
+      end
+    end
+
     def strategy=(strategy)
       add_cleaner(:autodetect) if none?
       values.each { |cleaner| cleaner.strategy = strategy }
@@ -47,6 +60,7 @@ module DatabaseCleaner
     extend Forwardable
     delegate [
       :[],
+      :strategy,
       :strategy=,
       :orm=,
     ] => :cleaners

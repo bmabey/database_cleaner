@@ -10,6 +10,7 @@ module DatabaseCleaner
       :[],
       :cleaners,
       :cleaners=,
+      :strategy,
       :strategy=,
       :orm=,
       :start,
