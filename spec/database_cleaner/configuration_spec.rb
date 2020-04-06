@@ -65,7 +65,11 @@ RSpec.describe DatabaseCleaner::Configuration do
 
   context "top level api methods" do
     context "single orm single connection" do
-      let(:connection) { config[:active_record] }
+      let!(:connection) { config[:active_record] }
+
+      it "should proxy strategy" do
+        expect(config.strategy).to eq(connection.strategy)
+      end
 
       it "should proxy strategy=" do
         stratagem = double("stratagem")
@@ -174,13 +178,20 @@ RSpec.describe DatabaseCleaner::Configuration do
       context "multiple orm proxy methods" do
         class FakeStrategy < Struct.new(:orm, :db, :strategy); end
 
-        context "with differing orms and dbs" do
-          let(:active_record_1) { FakeStrategy.new(:active_record) }
-          let(:active_record_2) { FakeStrategy.new(:active_record, :different) }
-          let(:data_mapper_1)   { FakeStrategy.new(:data_mapper) }
+        context "with differing orms and dbs but same strategy" do
+          let(:active_record_1) { FakeStrategy.new(:active_record, nil, :truncation) }
+          let(:active_record_2) { FakeStrategy.new(:active_record, :different, :truncation) }
+          let(:data_mapper_1)   { FakeStrategy.new(:data_mapper, nil, :truncation) }
 
           before do
             config.stub_cleaners [active_record_1,active_record_2,data_mapper_1]
+          end
+
+          it "should proxy #strategy to all cleaners and return a single result" do
+            expect(config.strategy)
+              .to eq(active_record_1.strategy)
+              .and eq(active_record_2.strategy)
+              .and eq(data_mapper_1.strategy)
           end
 
           it "should proxy #orm= to all cleaners and remove duplicate cleaners" do
@@ -197,6 +208,11 @@ RSpec.describe DatabaseCleaner::Configuration do
 
           before do
             config.stub_cleaners [active_record_1,active_record_2]
+          end
+
+          it "should proxy #strategy to all cleaners and return a hash of results" do
+            expect(config.strategy)
+              .to eq({ 0 => active_record_1.strategy, 1 => active_record_2.strategy })
           end
 
           it "should proxy #strategy= to all cleaners and remove duplicate cleaners" do
